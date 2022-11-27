@@ -1,28 +1,86 @@
-import { useMemo } from "react";
-import { clusterApiUrl } from "@solana/web3.js";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import React, { useEffect, useState } from "react";
+import CandyMachine from "../components/CandyMachine";
+import { useWallet } from "@solana/wallet-adapter-react";
+//import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import dynamic from 'next/dynamic';
+const WalletMultiButton = dynamic(
+    async () =>
+    (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
+    { ssr: false }
+);
+const TWITTER_HANDLE = "agungkzn";
+const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
-import "../styles/App.css";
-import "../styles/globals.css";
-import "../styles/CandyMachine.css";
-import "@solana/wallet-adapter-react-ui/styles.css";
+const App = () => {
+    // Actions
+    const [walletAddress, setWalletAddress] = useState(null);
 
-const App = ({ Component, pageProps }) => {
-    const network = WalletAdapterNetwork.Devnet;
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-    const wallets = useMemo(() => [new PhantomWalletAdapter()], [network]);
+    /*
+     * Declare your function
+     */
+    const checkIfWalletIsConnected = async () => {
+        try {
+            const { solana } = window;
+
+            if (solana) {
+                if (solana.isPhantom) {
+                    console.log("Phantom wallet found!");
+                    const response = await solana.connect({ onlyIfTrusted: true });
+                    console.log("Connected with Public Key:", response.publicKey.toString());
+                    setWalletAddress(response.publicKey.toString());
+                }
+            } else {
+                alert("Solana object not found! Get a Phantom Wallet 👻");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const connectWallet = async () => {
+        const { solana } = window;
+
+        if (solana) {
+            const response = await solana.connect();
+            console.log("Connected with Public Key:", response.publicKey.toString());
+            setWalletAddress(response.publicKey.toString());
+        }
+    };
+
+    const renderNotConnectedContainer = () => (
+        <button className="cta-button connect-wallet-button" onClick={connectWallet}>
+            Connect to Wallet
+        </button>
+    );
+
+    /*
+     * When our component first mounts, let's check to see if we have a connected
+     * Phantom Wallet
+     */
+    useEffect(() => {
+        const onLoad = async () => {
+            await checkIfWalletIsConnected();
+        };
+        window.addEventListener("load", onLoad);
+        return () => window.removeEventListener("load", onLoad);
+    }, []);
 
     return (
-        <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect>
-                <WalletModalProvider>
-                    <Component {...pageProps} />
-                </WalletModalProvider>
-            </WalletProvider>
-        </ConnectionProvider>
+        <div className="App">
+            <div className="container">
+                <div className="header-container">
+                    <p className="header">🍭 Candy Drop</p>
+                    <p className="sub-text">NFT drop machine with fair mint</p>
+                    {/* Render your connect to wallet button right here */}
+                    {!walletAddress && renderNotConnectedContainer()}
+                </div>
+                {walletAddress && <CandyMachine walletAddress={window.solana} />}
+                <div className="footer-container">
+                <img alt="Twitter Logo" className="twitter-logo" src="twitter-logo.svg" />
+                    <a className="footer-text" href={TWITTER_LINK} target="_blank" rel="noreferrer">{`built on @${TWITTER_HANDLE}`}</a>
+                </div>
+            </div>
+        </div>
     );
 };
 
