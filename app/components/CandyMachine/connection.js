@@ -1,5 +1,4 @@
 import { Transaction } from "@solana/web3.js";
-
 import { WalletNotConnectedError } from "@solana/wallet-adapter-base";
 
 export const getErrorForTransaction = async (connection, txid) => {
