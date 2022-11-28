@@ -8,7 +8,7 @@ const WalletMultiButton = dynamic(
     (await import("@solana/wallet-adapter-react-ui")).WalletMultiButton,
     { ssr: false }
 );
-const TWITTER_HANDLE = "agungkzn";
+const TWITTER_HANDLE = "aldy_argr";
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
